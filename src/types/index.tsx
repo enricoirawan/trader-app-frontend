@@ -9,4 +9,5 @@ export type PageComponent = {
   >;
   path: string;
   component: React.JSX.Element;
+  isPrivate: boolean;
 };

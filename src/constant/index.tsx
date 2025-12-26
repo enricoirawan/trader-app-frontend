@@ -10,6 +10,7 @@ export const pages: PageComponent[] = [
     icon: ChartCandlestick,
     path: '/',
     component: <TradePage />,
+    isPrivate: false,
   },
   {
     label: 'Assets',
@@ -17,5 +18,6 @@ export const pages: PageComponent[] = [
     icon: Bitcoin,
     path: '/assets',
     component: <AssetsPage />,
+    isPrivate: true,
   },
 ];

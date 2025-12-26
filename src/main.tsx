@@ -1,28 +1,26 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Route, Routes } from 'react-router';
+import { BrowserRouter } from 'react-router';
+import { ReactKeycloakProvider } from '@react-keycloak/web';
 
 import './index.css';
 
-import DashboardLayout from './components/DashboardLayout';
-import { pages } from './constant';
+import AppRouter from './routes/AppRouter';
+import keycloak from './lib/keycloak';
 
 document.documentElement.classList.add('dark');
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route element={<DashboardLayout />}>
-          {pages.map((page, index) => (
-            <Route
-              key={index}
-              index={page.path === '/'}
-              path={page.path}
-              element={page.component}
-            />
-          ))}
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <ReactKeycloakProvider
+      authClient={keycloak}
+      initOptions={{
+        onLoad: 'check-sso',
+        checkLoginIframe: false,
+      }}
+    >
+      <BrowserRouter>
+        <AppRouter />
+      </BrowserRouter>
+    </ReactKeycloakProvider>
   </StrictMode>
 );

@@ -1,10 +1,13 @@
 import { pages } from '@/constant';
+import { useAuth } from '@/hooks/useAuth';
 import { Bell } from 'lucide-react';
 import { useMemo } from 'react';
 import { useLocation } from 'react-router';
 
 const Header = () => {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
+
   const page = useMemo(() => {
     return pages.find((page) => page.path === location.pathname);
   }, [location.pathname]);
@@ -17,7 +20,7 @@ const Header = () => {
           {page?.description}
         </p>
       </div>
-      <Bell />
+      {isAuthenticated && <Bell />}
     </div>
   );
 };

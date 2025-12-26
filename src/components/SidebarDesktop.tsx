@@ -1,8 +1,8 @@
 import { pages } from '@/constant';
 import { useNavigate } from 'react-router';
+import Account from './Account';
 import Logo from './Logo';
 import SidebarDesktopNavItem from './SidebarDesktopNavItem';
-import Account from './Account';
 
 const SidebarDesktop = () => {
   const navigate = useNavigate();
