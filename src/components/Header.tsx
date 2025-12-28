@@ -13,7 +13,7 @@ const Header = () => {
   }, [location.pathname]);
 
   return (
-    <div className="bg-sidebar border border-gray-800 py-5 pl-5 pr-8 flex items-center justify-between rounded-lg">
+    <div className="bg-sidebar border border-gray-800 py-5 pl-5 pr-8 flex items-center justify-between rounded-lg mb-3">
       <div>
         <p className="font-bold">{page?.label}</p>
         <p className="text-xs md:text-sm text-muted-foreground">

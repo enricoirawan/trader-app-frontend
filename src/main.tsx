@@ -10,17 +10,16 @@ import keycloak from './lib/keycloak';
 
 document.documentElement.classList.add('dark');
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ReactKeycloakProvider
-      authClient={keycloak}
-      initOptions={{
-        onLoad: 'check-sso',
-        checkLoginIframe: false,
-      }}
-    >
-      <BrowserRouter>
-        <AppRouter />
-      </BrowserRouter>
-    </ReactKeycloakProvider>
-  </StrictMode>
+  <ReactKeycloakProvider
+    authClient={keycloak}
+    initOptions={{
+      onLoad: 'check-sso',
+      checkLoginIframe: false,
+      pkceMethod: 'S256',
+    }}
+  >
+    <BrowserRouter>
+      <AppRouter />
+    </BrowserRouter>
+  </ReactKeycloakProvider>
 );
