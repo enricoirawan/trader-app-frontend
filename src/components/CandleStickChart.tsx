@@ -72,14 +72,21 @@ const CandleStickChart = () => {
       CandlestickSeries,
       kCandleStickStyle
     );
+    candlestickSeries.applyOptions({
+      priceFormat: {
+        type: 'price',
+        precision: 2,
+        minMove: 0.00000001,
+      },
+    });
     candlestickSeriesRef.current = candlestickSeries;
 
     const formattedData = ohlcData.map((item) => ({
       time: item.time as UTCTimestamp,
-      open: item.open,
-      high: item.high,
-      low: item.low,
-      close: item.close,
+      open: Number(item.open),
+      high: Number(item.high),
+      low: Number(item.low),
+      close: Number(item.close),
     }));
     candlestickSeries.setData(formattedData);
 
