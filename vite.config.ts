@@ -8,6 +8,18 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 3011,
+    proxy: {
+      '/ws': {
+        target: process.env.VITE_GATEWAY_WS || 'ws://localhost:8000',
+        ws: true, // ✅ Aktifkan proxy WebSocket
+        changeOrigin: true,
+        // ✅ Penting: proxy semua subpath (/ws/info, /ws/iframe.html, dll)
+        rewrite: (path) => path, // jangan ubah path
+      },
+    },
+  },
+  define: {
+    global: 'globalThis',
   },
   resolve: {
     alias: {

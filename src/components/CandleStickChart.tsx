@@ -2,6 +2,7 @@ import { kCandleStickStyle, kChartContainerStyle } from '@/constant';
 import { cryptoService } from '@/services/cryptoService';
 import useSelectedCryptoCoinStore from '@/store/useSelectedCryptoCoinStore';
 import type { OHLCData } from '@/types';
+import clsx from 'clsx';
 import {
   CandlestickSeries,
   createChart,
@@ -9,56 +10,60 @@ import {
   type ISeriesApi,
   type UTCTimestamp,
 } from 'lightweight-charts';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCryptoWebSocket } from '@/hooks/useCryptoWebSocket';
 import { Spinner } from './ui/spinner';
-import clsx from 'clsx';
 
 const CandleStickChart = () => {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const chartDataRef = useRef<OHLCData[]>([]); // ✅ data mentah disimpan di sini
 
   const { selectedStringCoin, selectedTimeFrame } =
     useSelectedCryptoCoinStore();
 
-  const [ohlcData, setOhlcData] = useState<OHLCData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
 
+  // 💡 Tidak perlu state ohlcData terpisah, cukup pakai chartDataRef
+  // Tapi kita tetap pakai untuk trigger useEffect di bawah
+  const [ohlcData, setOhlcData] = useState<OHLCData[]>([]);
+
+  // Fetch data awal
   useEffect(() => {
-    if (selectedStringCoin) {
-      let isMounted = true;
+    if (!selectedStringCoin) return;
 
-      const fetchData = async () => {
-        try {
-          setLoading(true);
-          setOhlcData([]);
-          const response = await cryptoService.getHistoryOHLCCoin(
-            selectedTimeFrame,
-            selectedStringCoin
-          );
+    let isMounted = true;
 
-          if (isMounted && response.success) {
-            setOhlcData(response.data);
-          }
-        } catch (error) {
-          const apiError = error as { message: string; statusCode: number };
-          // handle error
-        } finally {
-          if (isMounted) {
-            setLoading(false);
-          }
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await cryptoService.getHistoryOHLCCoin(
+          selectedTimeFrame,
+          selectedStringCoin
+        );
+
+        if (isMounted && response.success) {
+          setOhlcData(response.data);
+          chartDataRef.current = response.data; // ✅ simpan ke ref
         }
-      };
+      } catch (error) {
+        console.error('Failed to fetch OHLC data:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-      fetchData();
+    fetchData();
 
-      return () => {
-        isMounted = false;
-      };
-    }
+    return () => {
+      isMounted = false;
+    };
   }, [selectedStringCoin, selectedTimeFrame]);
 
+  // Inisialisasi chart
   useEffect(() => {
     if (!chartContainerRef.current || ohlcData.length === 0) return;
 
@@ -81,6 +86,7 @@ const CandleStickChart = () => {
     });
     candlestickSeriesRef.current = candlestickSeries;
 
+    // Format dan set data awal
     const formattedData = ohlcData.map((item) => ({
       time: item.time as UTCTimestamp,
       open: Number(item.open),
@@ -89,16 +95,11 @@ const CandleStickChart = () => {
       close: Number(item.close),
     }));
     candlestickSeries.setData(formattedData);
-
-    // Auto fit content
     chart.timeScale().fitContent();
 
-    // Handle resize
     const handleResize = () => {
       if (chartContainerRef.current) {
-        chart.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-        });
+        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
       }
     };
 
@@ -109,6 +110,51 @@ const CandleStickChart = () => {
       chart.remove();
     };
   }, [ohlcData]);
+
+  // ✅ Perbaikan utama: ganti getData() dengan chartDataRef.current
+  const updateChartWithNewCandle = useCallback((newCandle: OHLCData) => {
+    if (!candlestickSeriesRef.current) return;
+
+    const formattedCandle = {
+      time: newCandle.time as UTCTimestamp,
+      open: Number(newCandle.open),
+      high: Number(newCandle.high),
+      low: Number(newCandle.low),
+      close: Number(newCandle.close),
+    };
+
+    const currentData = chartDataRef.current; // ✅ gunakan ref, bukan series.getData()
+    const lastCandle =
+      currentData.length > 0 ? currentData[currentData.length - 1] : null;
+
+    if (lastCandle && lastCandle.time === newCandle.time) {
+      // Update candle terakhir
+      const updatedData = [...currentData.slice(0, -1), newCandle];
+      chartDataRef.current = updatedData;
+
+      // Format ulang semua data untuk setData()
+      const formattedUpdatedData = updatedData.map((d) => ({
+        time: d.time as UTCTimestamp,
+        open: Number(d.open),
+        high: Number(d.high),
+        low: Number(d.low),
+        close: Number(d.close),
+      }));
+      candlestickSeriesRef.current.setData(formattedUpdatedData);
+    } else {
+      // Tambah candle baru
+      chartDataRef.current = [...currentData, newCandle];
+      candlestickSeriesRef.current.update(formattedCandle);
+    }
+  }, []);
+
+  useCryptoWebSocket({
+    symbol: selectedStringCoin,
+    onNewCandle: (candle) => {
+      console.log('🔥 New candle received:', candle); // ← tambahkan ini
+      updateChartWithNewCandle(candle);
+    },
+  });
 
   return (
     <div className="w-full h-full">

@@ -17,4 +17,9 @@ export const cryptoService = {
       `${CRYPTO_COIN}/history/${timeFrame}/${symbol}`
     );
   },
+  subscribeToSymbol: async (symbol: string) => {
+    return apiService.post<null>(
+      `${CRYPTO_COIN}/subscribe?symbol=${symbol}/USDT`
+    );
+  },
 };
