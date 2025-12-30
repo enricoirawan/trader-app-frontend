@@ -52,9 +52,7 @@ export const useCryptoWebSocket = ({
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: () => {
-        console.log('✅ STOMP Connected via Gateway (WebSocket)');
         client.subscribe(`/topic/candle/${symbol}/USDT`, (msg) => {
-          console.log('ws message => ', msg);
           const candle = JSON.parse(msg.body);
           onNewCandle(candle);
         });
